@@ -399,13 +399,14 @@
     return Math.abs((a.area || 0) - (b.area || 0)) <= tol;
   }
   function dedupe(items, tol) {
-    var groups = [];
+    var groups = [], idx = {};
     items.forEach(function (it) {
-      var g = null;
-      for (var i = 0; i < groups.length; i++) {
-        if (sameObject(groups[i][0], it, tol)) { g = groups[i]; break; }
+      var key = normAddr(it.address) + "|" + (it.rooms == null ? "" : it.rooms) + "|" + (it.floor == null ? "" : it.floor);
+      var list = idx[key] || (idx[key] = []), g = null;
+      for (var i = 0; i < list.length; i++) {
+        if (sameObject(list[i][0], it, tol)) { g = list[i]; break; }
       }
-      if (g) g.push(it); else groups.push([it]);
+      if (g) g.push(it); else { g = [it]; list.push(g); groups.push(g); }
     });
     var kept = [], dups = [];
     groups.forEach(function (g) {
@@ -447,11 +448,45 @@
     };
   }
 
+  var BUILD_CACHE = new Map();
   function buildObjects(listings) {
+    if (BUILD_CACHE.has(listings)) return BUILD_CACHE.get(listings);
+    var res = buildObjects0(listings); BUILD_CACHE.set(listings, res); return res;
+  }
+  function dailyInfo(rows) {
+    if (!rows || !rows.length) return null;
+    var seen = {}, p = [];
+    rows.forEach(function (r) { if (!seen[r[0]] && r[1] > 0) { seen[r[0]] = 1; p.push(r[1]); } });
+    p.sort(function (a, b) { return a - b; });
+    if (p.length >= 4) { var q1 = quantile(p, .25), q3 = quantile(p, .75), k = 1.5 * (q3 - q1); p = p.filter(function (v) { return v >= q1 - k && v <= q3 + k; }); }
+    if (!p.length) return null;
+    return { from: p[0], med: median(p), n: p.length };
+  }
+  function expandCompact(j) {
+    if (!j.rent && !j.daily) return;
+    var R = j.rent || {}, D = j.daily || {}, cache = {};
+    j.collections.forEach(function (c) {
+      (c.listings || []).forEach(function (l) {
+        if (l.g && !l.rent_comparables) {
+          l.rent_comparables = cache[l.g] || (cache[l.g] = (R[l.g] || []).map(function (r) {
+            return { id: r[0], price: r[1], area: r[2], floor: r[3], address: r[4], source: "ЦИАН", url: "https://www.cian.ru/rent/flat/" + r[0] + "/" };
+          }));
+        }
+        if (l.h && D[l.h] && !l.daily) l.daily = dailyInfo(D[l.h]);
+        if (!l.url && l.id) l.url = "https://www.cian.ru/sale/flat/" + l.id + "/";
+        if (!l.source) l.source = "ЦИАН";
+      });
+    });
+  }
+  function buildObjects0(listings) {
     var tol = SETTINGS.duplicates.area_tolerance_m2;
     var d = dedupe(listings, tol);
+    var twinsOf = new Map();
+    var byKey = {};
+    d.kept.forEach(function (l) { var key = normAddr(l.address) + "|" + l.rooms + "|" + l.floor; (byKey[key] = byKey[key] || []).push(l); });
+    d.dups.forEach(function (x) { var key = normAddr(x.item.address) + "|" + x.item.rooms + "|" + x.item.floor; (byKey[key] || []).forEach(function (l) { if (sameObject(x.item, l, tol)) { var a = twinsOf.get(l) || []; a.push(x.item); twinsOf.set(l, a); } }); });
     return d.kept.map(function (l) {
-      var twins = d.dups.filter(function (x) { return sameObject(x.item, l, tol); }).map(function (x) { return x.item; });
+      var twins = twinsOf.get(l) || [];
       // аренду берём из всех копий объявления, затем снова чистим от дублей
       var comps = (l.rent_comparables || []).slice();
       twins.forEach(function (t) { comps = comps.concat(t.rent_comparables || []); });
@@ -499,7 +534,7 @@
   }
   function setData(j) {
     if (!j || !Array.isArray(j.collections) || !j.collections.length) throw new Error("bad");
-    DATA = j;
+    DATA = j; BUILD_CACHE = new Map(); expandCompact(j);
     if (j.settings) {
       if (j.settings.outliers) SETTINGS.outliers = Object.assign({}, SETTINGS.outliers, j.settings.outliers);
       if (j.settings.min_comparables) SETTINGS.min_comparables = j.settings.min_comparables;
@@ -711,7 +746,8 @@
     var box = document.getElementById("results");
     if (!box) return;
     box.classList.remove("hidden");
-    var list = state.showAll ? state.results : state.results.slice(0, 5);
+    var lim = state.showAll ? (state.limit || 25) : 5;
+    var list = state.results.slice(0, lim);
     var sortLabel = SORTS.filter(function (s) { return s.id === state.sort; })[0].label.toLowerCase();
     var html = '<h2>Результаты</h2>';
     if (!state.total) {
@@ -720,13 +756,15 @@
       return;
     }
     html += '<p class="meta-line">Найдено ' + state.total + ' ' + plural(state.total, "объект", "объекта", "объектов") +
-      ' · ' + (state.showAll ? "показаны все" : "топ-" + list.length) + ' по параметру «' + sortLabel + '», ' + dirLabel(state.dir).toLowerCase() + '</p>';
+      ' · ' + (state.showAll ? "показано " + list.length : "топ-" + list.length) + ' по параметру «' + sortLabel + '», ' + dirLabel(state.dir).toLowerCase() + '</p>';
     if (state.total <= 7 && state.total > 1) html += '<div class="warn" style="margin:0 0 12px">Под фильтры подошло всего ' + state.total + ' ' + plural(state.total, "объект", "объекта", "объектов") + ': топ-5 по любому параметру будет включать почти все. Расширьте фильтры или откройте «Показать все».</div>';
     html += list.map(cardHtml).join("");
     html += '<div class="res-foot">';
-    if (state.total > 5) {
-      html += '<button class="btn-line" data-act="all">' + (state.showAll ? "Свернуть до топ-5" : "Показать все (" + state.total + ")") + '</button>';
+    if (state.total > list.length) {
+      var nx = Math.min(state.showAll ? 25 : 20, state.total - list.length);
+      html += '<button class="btn-line" data-act="more-list">Показать ещё ' + nx + ' (всего ' + state.total + ')</button>';
     }
+    if (state.showAll) html += '<button class="btn-line" data-act="all">Свернуть до топ-5</button>';
     html += '<button class="btn-line" data-act="copy">' + I.copy + 'Скопировать подборку</button></div>';
     html += '<details class="note"><summary>Что означают значки</summary><ul class="legend-list">' +
       '<li><span class="ico" aria-hidden="true">🔨</span><span>Есть ремонт или чистовая отделка. Вид — в «Подробнее».</span></li>' +
@@ -1014,7 +1052,10 @@
         }
         break;
       case "all":
-        state.showAll = !state.showAll; renderResults(); break;
+        state.showAll = false; state.limit = 5; renderResults(); break;
+      case "more-list":
+        if (!state.showAll) { state.showAll = true; state.limit = 25; } else state.limit = (state.limit || 25) + 25;
+        renderResults(); break;
       case "copy":
         copyText(exportText(), "Подборка скопирована. Вставьте её в любой чат или заметки — ссылки станут активными.");
         break;
