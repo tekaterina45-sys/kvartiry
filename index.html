@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Квартиры под сдачу</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --text: #151316;
+    --bg: #FBFAF9;
+    --accent: #6E2436;
+    --paper: #EFE7DC;
+    --line: #E6E0DC;
+    --card: #F2EFED;
+    --muted: #6B6668;
+    --tint: #F3E9EC;
+    --white: #FFFFFF;
+    --r-s: 8px;
+    --r-m: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); }
+  body {
+    font-family: "Onest", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+    font-size: 16px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    padding: 0 16px calc(40px + env(safe-area-inset-bottom));
+    max-width: 560px; margin: 0 auto;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; }
+  a { color: var(--accent); }
+
+  /* Шапка */
+  .head { padding: 24px 0 16px; }
+  .over {
+    font-size: 13px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+  }
+  h1 { font-size: 30px; font-weight: 700; line-height: 1.1; }
+  .sub { color: var(--muted); font-size: 14px; line-height: 1.45; margin-top: 8px; }
+
+  section { padding: 24px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 22px; font-weight: 600; line-height: 1.15; margin-bottom: 16px; }
+
+  /* Подборки */
+  .rail {
+    display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory;
+    margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .coll {
+    flex: 0 0 auto; width: 220px; scroll-snap-align: start; text-align: left;
+    background: var(--card); border: 1px solid var(--card); border-radius: var(--r-m);
+    padding: 16px; display: flex; flex-direction: column; gap: 8px; min-height: 120px;
+  }
+  .coll.on { background: var(--white); border-color: var(--accent); }
+  .coll b { font-weight: 600; font-size: 15px; line-height: 1.3; }
+  .coll span { font-size: 13px; color: var(--muted); margin-top: auto; }
+  .coll.on b { color: var(--accent); }
+  .upl {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 16px;
+    font-size: 14px; color: var(--muted);
+  }
+  .upl svg { width: 16px; height: 16px; }
+
+  /* Конструктор */
+  .field { margin-bottom: 24px; }
+  .label { font-size: 14px; color: var(--muted); margin-bottom: 8px; display: block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 8px 14px; border-radius: var(--r-s); border: 1px solid var(--line);
+    background: var(--white); font-size: 15px; line-height: 1.3; white-space: nowrap;
+  }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .inp {
+    width: 100%; height: 44px; padding: 0 12px; border-radius: var(--r-s);
+    border: 1px solid var(--line); background: var(--white); font-size: 16px;
+    -webkit-appearance: none; appearance: none;
+  }
+  .inp:focus { outline: none; border-color: var(--accent); }
+  select.inp {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236B6668' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: var(--r-s); overflow: hidden; background: var(--white); }
+  .seg-btn { padding: 10px 8px; font-size: 14px; line-height: 1.3; text-align: center; }
+  .seg-btn + .seg-btn { border-left: 1px solid var(--line); }
+  .seg-btn.on { background: var(--accent); color: var(--bg); font-weight: 600; }
+  .sortrow { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .dir {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--accent);
+    padding: 6px 0; font-weight: 600;
+  }
+  .dir svg { width: 14px; height: 14px; transition: transform .2s; }
+  .dir.asc svg { transform: rotate(180deg); }
+  .hint { font-size: 13px; color: var(--muted); }
+
+  .btn {
+    width: 100%; height: 52px; border-radius: var(--r-s); background: var(--accent);
+    color: var(--bg); font-weight: 600; font-size: 16px;
+  }
+  .btn:active { opacity: .85; }
+  .btn-line {
+    width: 100%; height: 48px; border-radius: var(--r-s); border: 1px solid var(--line);
+    background: var(--white); font-weight: 600; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-line svg { width: 18px; height: 18px; }
+
+  /* Результаты */
+  .meta-line { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+  .empty {
+    background: var(--card); border-radius: var(--r-m); padding: 24px;
+    color: var(--muted); font-size: 15px;
+  }
+  .card {
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--r-m);
+    padding: 16px; margin-bottom: 8px;
+  }
+  .card-top { display: flex; gap: 12px; align-items: flex-start; }
+  .num {
+    flex: 0 0 32px; height: 32px; border-radius: 50%; background: var(--card);
+    color: var(--accent); font-weight: 600; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-title { font-weight: 600; font-size: 16px; line-height: 1.3; }
+  .card-place { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+  .kpi small { display: block; font-size: 12px; color: var(--muted); line-height: 1.3; }
+  .kpi strong { font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .kpi.key strong { color: var(--accent); }
+  .warn {
+    margin-top: 12px; font-size: 13px; color: var(--accent); background: var(--tint);
+    border-radius: var(--r-s); padding: 8px 12px;
+  }
+  .more {
+    margin-top: 12px; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 14px; font-weight: 600; color: var(--accent); padding: 4px 0;
+  }
+  .more svg { width: 14px; height: 14px; transition: transform .2s; }
+  .card.open .more svg { transform: rotate(180deg); }
+  .details { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .card.open .details { display: block; }
+  .dl { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; font-size: 14px; }
+  .dl dt { color: var(--muted); }
+  .dl dd { text-align: right; font-weight: 600; }
+  .basis { font-size: 13px; color: var(--muted); margin-top: 16px; line-height: 1.45; }
+  .linkbtn {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--accent);
+    font-weight: 600; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .linkbtn svg { width: 14px; height: 14px; }
+  .excl { display: none; margin-top: 12px; background: var(--card); border-radius: var(--r-s); padding: 12px; }
+  .excl.show { display: block; }
+  .excl-toggle { margin-top: 12px; }
+  .excl-close { margin-top: 8px; }
+  .excl-close svg { transform: rotate(180deg); }
+  /* Окно сообщения автору */
+  .sheet-bg { position: fixed; inset: 0; background: rgba(21,19,22,.4); z-index: 30; display: flex; align-items: flex-end; justify-content: center; }
+  .sheet-bg[hidden] { display: none; }
+  .sheet { width: 100%; max-width: 560px; background: var(--bg); border-radius: var(--r-m) var(--r-m) 0 0;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
+  .sheet h3 { font-size: 20px; font-weight: 600; line-height: 1.2; }
+  .sheet p { font-size: 14px; color: var(--muted); line-height: 1.45; }
+  .sheet textarea { width: 100%; min-height: 160px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-s);
+    background: var(--white); font: inherit; font-size: 15px; line-height: 1.45; resize: vertical; }
+  .sheet textarea:focus { outline: none; border-color: var(--accent); }
+  .sheet a.btn { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+  .sheet .contact-line { font-size: 14px; color: var(--muted); }
+  .sheet .contact-line b { color: var(--text); user-select: all; }
+  .excl-item { font-size: 13px; line-height: 1.45; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .excl-item:last-child { border-bottom: 0; }
+  .excl-item b { font-weight: 600; }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent); border-radius: var(--r-s); padding: 1px 6px; margin-left: 6px;
+  }
+  .actions { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; align-items: flex-start; }
+  .res-foot { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 16px; line-height: 1.45; }
+
+  /* Связь */
+  .contact { display: grid; gap: 8px; }
+  .ccard {
+    background: var(--card); border-radius: var(--r-m); padding: 16px; text-align: left;
+    display: flex; gap: 12px; align-items: flex-start; width: 100%;
+  }
+  .ccard svg { flex: 0 0 22px; width: 22px; height: 22px; color: var(--accent); margin-top: 2px; }
+  .ccard b { font-weight: 600; display: block; }
+  .ccard span { font-size: 14px; color: var(--muted); line-height: 1.45; }
+  .reqform { display: none; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-m); padding: 16px; }
+  .reqform.show { display: block; }
+  .reqform .field { margin-bottom: 16px; }
+
+  /* Заглушка */
+  .stub { text-align: left; padding: 40px 0; }
+  .stub .box { background: var(--paper); border-radius: var(--r-m); padding: 24px; }
+  .stub h2 { margin-bottom: 8px; }
+  .stub p { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
+  .stub .res-foot { margin-top: 0; }
+
+  /* Загрузка */
+  .skeleton { height: 120px; border-radius: var(--r-m); background: var(--card); margin-bottom: 8px; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .55; } }
+
+  /* Уведомление */
+  .toast {
+    position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+    max-width: 528px; margin: 0 auto; background: var(--paper); border-left: 3px solid var(--accent);
+    border-radius: var(--r-s); padding: 12px 16px; font-size: 14px; line-height: 1.45;
+    transform: translateY(24px); opacity: 0; visibility: hidden;
+    transition: transform .25s ease, opacity .25s ease, visibility 0s .25s; z-index: 10;
+  }
+  .toast.show { transform: none; opacity: 1; visibility: visible; transition: transform .25s ease, opacity .25s ease; }
+  /* Заставка */
+  body.splashing { overflow: hidden; }
+  #splash {
+    position: fixed; inset: 0; z-index: 20; background: var(--bg);
+    backface-visibility: hidden; -webkit-backface-visibility: hidden; cursor: pointer;
+  }
+  #splash img {
+    width: 100%; height: 100%; object-fit: cover; object-position: 50% 28%; display: block;
+  }
+  .plate {
+    position: absolute; left: 0; bottom: calc(32px + env(safe-area-inset-bottom));
+    background: var(--bg); padding: 16px 24px 16px 16px;
+  }
+  .plate .name {
+    font-size: 12px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--text); line-height: 1.3;
+  }
+  .plate .what { font-size: 20px; font-weight: 700; line-height: 1.15; margin-top: 4px; color: var(--accent); }
+  #page { transform-origin: 50% 40vh; }
+  #page.pre { visibility: hidden; }
+  #splash.flip-out { animation: flipOut .38s cubic-bezier(.55,0,.75,.4) forwards; transform-origin: 50% 50%; }
+  #page.flip-in { animation: flipIn .42s cubic-bezier(.2,.6,.3,1) both; }
+  #splash.fade-out { animation: fadeOut .25s ease forwards; }
+  #page.fade-in { animation: fadeIn .25s ease both; }
+  @keyframes flipOut { from { transform: perspective(1400px) rotateY(0); } to { transform: perspective(1400px) rotateY(-90deg); } }
+  @keyframes flipIn { from { transform: perspective(1400px) rotateY(90deg); } to { transform: perspective(1400px) rotateY(0); } }
+  @keyframes fadeOut { to { opacity: 0; } }
+  @keyframes fadeIn { from { opacity: 0; } }
+
+  .hidden { display: none !important; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body class="splashing">
+
+<div id="splash" role="button" aria-label="Открыть приложение">
+  <img src="splash.jpg" alt="Екатерина Пассер">
+  <div class="plate">
+    <div class="name">Екатерина Пассер</div>
+    <div class="what">Квартиры под сдачу</div>
+  </div>
+</div>
+
+<div id="page" class="pre">
+<header class="head">
+  <div class="over">Анализ доходности</div>
+  <h1>Квартиры под сдачу</h1>
+  <p class="sub" id="headSub">Загружаю подборки…</p>
+</header>
+
+<main id="app">
+  <div class="skeleton"></div>
+  <div class="skeleton"></div>
+</main>
+</div>
+
+<input type="file" id="fileInput" accept=".json,application/json" class="vh">
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sheet-bg" id="sheetBg" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">Сообщение автору</h3>
+    <p>Допишите вопрос. Нажмите кнопку ниже: текст скопируется, откроется чат в Telegram — вставьте его и отправьте.</p>
+    <textarea id="sheetText" aria-label="Текст сообщения"></textarea>
+    <a class="btn" id="sheetGo" href="https://t.me/Katerina_Passer" target="_blank" rel="noopener">Скопировать и открыть чат</a>
+    <div class="contact-line">Если чат не открылся: Telegram <b id="sheetUser">@Katerina_Passer</b></div>
+    <button class="btn-line" data-act="sheet-close">Закрыть</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Telegram ---------- */
+  var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      if (tg.setHeaderColor) tg.setHeaderColor("#FBFAF9");
+      if (tg.setBackgroundColor) tg.setBackgroundColor("#FBFAF9");
+    } catch (e) {}
+  }
+  function haptic(kind) {
+    try { if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged(); } catch (e) {}
+  }
+  function openExternal(url) {
+    if (!url) return;
+    try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (e) {}
+    window.open(url, "_blank", "noopener");
+  }
+  function openTelegram(url) {
+    try { if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); return; } } catch (e) {}
+    window.open(url, "_blank", "noopener");
+  }
+
+  /* ---------- Иконки ---------- */
+  var I = {
+    chev: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 6l4.5 4.5L12.5 6"/></svg>',
+    ext: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h4v4M13 3L7 9M11.5 9.5V13h-8.5V4.5H7"/></svg>',
+    copy: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M13 7V5a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2"/></svg>',
+    msg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5h16v11H9l-5 4V5z"/></svg>',
+    upd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 12a8 8 0 11-2.3-5.6M20 4v4h-4"/></svg>',
+    file: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 11V2M4.5 5.5L8 2l3.5 3.5M2.5 10v3.5h11V10"/></svg>'
+  };
+
+  /* ---------- Утилиты ---------- */
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function num(n, d) {
+    return Number(n).toLocaleString("ru-RU", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+  }
+  function mln(p) {
+    return Number(p / 1e6).toLocaleString("ru-RU", { maximumFractionDigits: 2 }) + " млн ₽";
+  }
+  function rub(p) { return num(Math.round(p)) + " ₽"; }
+  function pct(v) { return num(v, 1) + "%"; }
+  function roomsLabel(r) { return r === 0 ? "студия" : r + "-комн."; }
+  function dateRu(s) {
+    if (!s) return "";
+    var d = new Date(s + "T12:00:00");
+    if (isNaN(d)) return s;
+    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+  }
+  function shortDate(s) {
+    var d = new Date(s + "T12:00:00");
+    return isNaN(d) ? s : d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  }
+  function normAddr(a) {
+    return String(a || "").toLowerCase().replace(/ё/g, "е").replace(/[.,\s]+/g, " ").trim();
+  }
+  function median(sorted) {
+    var n = sorted.length;
+    if (!n) return null;
+    return n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+  }
+  function quantile(sorted, q) {
+    var pos = (sorted.length - 1) * q, b = Math.floor(pos), r = pos - b;
+    return sorted[b + 1] !== undefined ? sorted[b] + r * (sorted[b + 1] - sorted[b]) : sorted[b];
+  }
+
+  /* ---------- Аналитика ---------- */
+  var SETTINGS = {
+    outliers: { method: "iqr", k: 1.5 },
+    min_comparables: 5,
+    duplicates: { area_tolerance_m2: 1 }
+  };
+
+  // Дубли: тот же адрес, тот же этаж (если указан), метраж ± допуск. Оставляем минимальную цену.
+  function sameObject(a, b, tol) {
+    if (normAddr(a.address) !== normAddr(b.address)) return false;
+    if (a.rooms != null && b.rooms != null && a.rooms !== b.rooms) return false;
+    if (a.floor != null && b.floor != null && a.floor !== b.floor) return false;
+    return Math.abs((a.area || 0) - (b.area || 0)) <= tol;
+  }
+  function dedupe(items, tol) {
+    var groups = [];
+    items.forEach(function (it) {
+      var g = null;
+      for (var i = 0; i < groups.length; i++) {
+        if (sameObject(groups[i][0], it, tol)) { g = groups[i]; break; }
+      }
+      if (g) g.push(it); else groups.push([it]);
+    });
+    var kept = [], dups = [];
+    groups.forEach(function (g) {
+      g.sort(function (x, y) { return x.price - y.price; });
+      kept.push(g[0]);
+      for (var i = 1; i < g.length; i++) dups.push({ item: g[i], keptPrice: g[0].price });
+    });
+    return { kept: kept, dups: dups };
+  }
+
+  function analyzeRent(comps) {
+    var tol = SETTINGS.duplicates.area_tolerance_m2;
+    var d = dedupe(comps || [], tol);
+    var excluded = d.dups.map(function (x) {
+      return { item: x.item, reason: "дубль", note: "та же квартира, учтена цена " + rub(x.keptPrice) };
+    });
+    var pool = d.kept.slice();
+    var lo = null, hi = null;
+    if (pool.length >= 4 && SETTINGS.outliers.method === "iqr") {
+      var s = pool.map(function (c) { return c.price; }).sort(function (a, b) { return a - b; });
+      var q1 = quantile(s, 0.25), q3 = quantile(s, 0.75), iqr = q3 - q1, k = SETTINGS.outliers.k;
+      lo = q1 - k * iqr; hi = q3 + k * iqr;
+      pool = pool.filter(function (c) {
+        if (c.price < lo || c.price > hi) {
+          excluded.push({ item: c, reason: "выброс", note: c.price > hi ? "сильно выше рынка" : "сильно ниже рынка" });
+          return false;
+        }
+        return true;
+      });
+    }
+    var prices = pool.map(function (c) { return c.price; }).sort(function (a, b) { return a - b; });
+    return {
+      rent: median(prices),
+      used: pool,
+      excluded: excluded,
+      range: prices.length ? [prices[0], prices[prices.length - 1]] : null,
+      lowData: prices.length < SETTINGS.min_comparables,
+      total: (comps || []).length
+    };
+  }
+
+  function buildObjects(listings) {
+    var tol = SETTINGS.duplicates.area_tolerance_m2;
+    var d = dedupe(listings, tol);
+    return d.kept.map(function (l) {
+      var twins = d.dups.filter(function (x) { return sameObject(x.item, l, tol); }).map(function (x) { return x.item; });
+      // аренду берём из всех копий объявления, затем снова чистим от дублей
+      var comps = (l.rent_comparables || []).slice();
+      twins.forEach(function (t) { comps = comps.concat(t.rent_comparables || []); });
+      var r = analyzeRent(comps);
+      var o = Object.assign({}, l);
+      o.twins = twins;
+      o.rentInfo = r;
+      o.rent = r.rent;
+      o.ppm = l.area ? l.price / l.area : null;
+      o.yield = r.rent ? r.rent * 12 / l.price * 100 : null;
+      o.payback = r.rent ? Math.round(l.price / r.rent) : null;
+      return o;
+    });
+  }
+
+  /* ---------- Состояние ---------- */
+  var DATA = null;
+  var SORTS = [
+    { id: "yield",   label: "Доходность",   dir: "desc" },
+    { id: "price",   label: "Цена квартиры", dir: "asc" },
+    { id: "rent",    label: "Цена аренды",  dir: "desc" },
+    { id: "payback", label: "Окупаемость",  dir: "asc" },
+    { id: "ppm",     label: "Цена за м²",   dir: "asc" }
+  ];
+  var ROOMS = [{ v: 0, l: "Студия" }, { v: 1, l: "1" }, { v: 2, l: "2" }, { v: 3, l: "3+" }];
+  var state = {
+    coll: null,            // id подборки или "all"
+    rooms: [],             // пусто = любые
+    type: "all",
+    district: "",
+    okrugs: [],
+    pMin: "", pMax: "", aMin: "", aMax: "",
+    sort: "yield", dir: "desc",
+    shown: false, showAll: false,
+    results: [], total: 0
+  };
+
+  /* ---------- Загрузка ---------- */
+  function load() {
+    fetch("data.json?v=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { setData(j); })
+      .catch(function () { renderStub(); });
+  }
+  function setData(j) {
+    if (!j || !Array.isArray(j.collections) || !j.collections.length) throw new Error("bad");
+    DATA = j;
+    if (j.settings) {
+      if (j.settings.outliers) SETTINGS.outliers = Object.assign({}, SETTINGS.outliers, j.settings.outliers);
+      if (j.settings.min_comparables) SETTINGS.min_comparables = j.settings.min_comparables;
+      if (j.settings.duplicates) SETTINGS.duplicates = Object.assign({}, SETTINGS.duplicates, j.settings.duplicates);
+    }
+    state.coll = j.collections[0].id;
+    state.shown = false; state.showAll = false; state.district = ""; state.okrugs = [];
+    var upd = j.meta && j.meta.updated ? "База обновлена " + dateRu(j.meta.updated) : "";
+    document.getElementById("headSub").textContent =
+      "Цена покупки, рыночная аренда и срок окупаемости." + (upd ? " " + upd : "");
+    renderApp();
+  }
+
+  /* ---------- Отбор ---------- */
+  function currentListings() {
+    if (state.coll === "all") {
+      return DATA.collections.reduce(function (a, c) { return a.concat(c.listings || []); }, []);
+    }
+    var c = DATA.collections.filter(function (x) { return x.id === state.coll; })[0];
+    return c ? (c.listings || []) : [];
+  }
+  var OKRUG_ORDER = ["ЦАО","САО","СВАО","ВАО","ЮВАО","ЮАО","ЮЗАО","ЗАО","СЗАО","ЗелАО","НАО","ТАО"];
+  function okrugs() {
+    var set = {};
+    currentListings().forEach(function (l) { if (l.okrug) set[l.okrug] = 1; });
+    return Object.keys(set).sort(function (a, b) {
+      var x = OKRUG_ORDER.indexOf(a), y = OKRUG_ORDER.indexOf(b);
+      return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b, "ru");
+    });
+  }
+  function districts() {
+    var set = {};
+    currentListings().forEach(function (l) {
+      if (!l.district) return;
+      if (state.okrugs.length && state.okrugs.indexOf(l.okrug) < 0) return;
+      set[l.district] = 1;
+    });
+    return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, "ru"); });
+  }
+  function toNum(v) { var n = parseFloat(String(v).replace(",", ".")); return isNaN(n) ? null : n; }
+
+  function runAnalysis() {
+    var objs = buildObjects(currentListings());
+    var pMin = toNum(state.pMin), pMax = toNum(state.pMax), aMin = toNum(state.aMin), aMax = toNum(state.aMax);
+    objs = objs.filter(function (o) {
+      if (state.rooms.length) {
+        var ok = state.rooms.some(function (r) { return r === 3 ? o.rooms >= 3 : o.rooms === r; });
+        if (!ok) return false;
+      }
+      if (state.type !== "all" && o.type !== state.type) return false;
+      if (state.okrugs.length && state.okrugs.indexOf(o.okrug) < 0) return false;
+      if (state.district && o.district !== state.district) return false;
+      if (pMin != null && o.price < pMin * 1e6) return false;
+      if (pMax != null && o.price > pMax * 1e6) return false;
+      if (aMin != null && o.area < aMin) return false;
+      if (aMax != null && o.area > aMax) return false;
+      return true;
+    });
+    var key = state.sort, sign = state.dir === "asc" ? 1 : -1;
+    objs.sort(function (a, b) {
+      var x = a[key], y = b[key];
+      if (x == null && y == null) return 0;
+      if (x == null) return 1;
+      if (y == null) return -1;
+      return (x - y) * sign;
+    });
+    state.results = objs;
+    state.total = objs.length;
+  }
+
+  /* ---------- Отрисовка ---------- */
+  var app = document.getElementById("app");
+
+  function renderStub() {
+    document.getElementById("headSub").textContent = "Не удалось загрузить подборки.";
+    app.innerHTML =
+      '<div class="stub"><div class="box">' +
+        '<div class="over">Нет связи с базой</div>' +
+        '<h2>Подборки пока недоступны</h2>' +
+        '<p>Файл с данными не загрузился. Проверьте интернет и попробуйте ещё раз — или откройте файл базы с телефона.</p>' +
+        '<div class="res-foot">' +
+          '<button class="btn" data-act="retry">Повторить</button>' +
+          '<button class="btn-line" data-act="upload">' + I.file + 'Открыть файл базы</button>' +
+        '</div>' +
+      '</div></div>';
+  }
+
+  function renderApp() {
+    app.innerHTML =
+      sectionCollections() +
+      sectionBuilder() +
+      '<section id="results" class="' + (state.shown ? "" : "hidden") + '"></section>' +
+      sectionContact();
+    if (state.shown) renderResults();
+  }
+
+  function sectionCollections() {
+    var cards = DATA.collections.map(function (c) {
+      var n = buildObjects(c.listings || []).length;
+      return '<button class="coll' + (state.coll === c.id ? " on" : "") + '" data-coll="' + esc(c.id) + '">' +
+        '<b>' + esc(c.title) + '</b>' +
+        '<span>' + n + ' ' + plural(n, "объект", "объекта", "объектов") + (c.updated ? ' · от ' + esc(shortDate(c.updated)) : '') + '</span>' +
+      '</button>';
+    }).join("");
+    if (DATA.collections.length > 1) {
+      cards += '<button class="coll' + (state.coll === "all" ? " on" : "") + '" data-coll="all">' +
+        '<b>Все подборки</b><span>искать по всем базам</span></button>';
+    }
+    return '<section style="border-top:0;padding-top:8px">' +
+      '<h2>Подборки</h2>' +
+      '<div class="rail">' + cards + '</div>' +
+      '<button class="upl" data-act="upload">' + I.file + 'Открыть файл базы</button>' +
+    '</section>';
+  }
+
+  function sectionBuilder() {
+    var rooms = ROOMS.map(function (r) {
+      return '<button class="chip' + (state.rooms.indexOf(r.v) > -1 ? " on" : "") + '" data-room="' + r.v + '">' + r.l + '</button>';
+    }).join("");
+    var types = [["all", "Все"], ["новостройка", "Новостройка"], ["вторичка", "Вторичка"]].map(function (t) {
+      return '<button class="chip' + (state.type === t[0] ? " on" : "") + '" data-type="' + t[0] + '">' + t[1] + '</button>';
+    }).join("");
+    var oks = okrugs().map(function (k) {
+      return '<button class="chip' + (state.okrugs.indexOf(k) > -1 ? " on" : "") + '" data-okrug="' + esc(k) + '">' + esc(k) + '</button>';
+    }).join("");
+    var ds = districts().map(function (d) {
+      return '<option value="' + esc(d) + '"' + (state.district === d ? " selected" : "") + '>' + esc(d) + '</option>';
+    }).join("");
+    var sorts = SORTS.map(function (s) {
+      return '<button class="chip' + (state.sort === s.id ? " on" : "") + '" data-sort="' + s.id + '">' + s.label + '</button>';
+    }).join("");
+    return '<section>' +
+      '<h2>Конструктор</h2>' +
+      '<div class="field"><span class="label">Бюджет, млн ₽</span><div class="row2">' +
+        '<input class="inp" inputmode="decimal" placeholder="от" data-in="pMin" value="' + esc(state.pMin) + '">' +
+        '<input class="inp" inputmode="decimal" placeholder="до" data-in="pMax" value="' + esc(state.pMax) + '">' +
+      '</div></div>' +
+      '<div class="field"><span class="label">Комнаты</span><div class="chips">' + rooms + '</div></div>' +
+      '<div class="field"><span class="label">Тип жилья</span><div class="chips">' + types + '</div></div>' +
+      (oks ? '<div class="field"><span class="label">Округ</span><div class="chips">' + oks + '</div></div>' : '') +
+      '<div class="field"><span class="label">Район</span>' +
+        '<select class="inp" data-in="district"><option value="">Любой</option>' + ds + '</select></div>' +
+      '<div class="field"><span class="label">Площадь, м²</span><div class="row2">' +
+        '<input class="inp" inputmode="decimal" placeholder="от" data-in="aMin" value="' + esc(state.aMin) + '">' +
+        '<input class="inp" inputmode="decimal" placeholder="до" data-in="aMax" value="' + esc(state.aMax) + '">' +
+      '</div></div>' +
+      '<div class="field"><span class="label">Топ-5 по параметру</span><div class="chips">' + sorts + '</div>' +
+        '<span class="label" style="margin-top:16px">Порядок</span>' +
+        '<div class="seg" role="group" aria-label="Порядок сортировки">' +
+          '<button class="seg-btn' + (state.dir === "desc" ? " on" : "") + '" data-dir="desc">↓ ' + dirLabel("desc") + '</button>' +
+          '<button class="seg-btn' + (state.dir === "asc" ? " on" : "") + '" data-dir="asc">↑ ' + dirLabel("asc") + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<button class="btn" data-act="run">' + (state.shown ? "Обновить результат" : "Показать квартиры") + '</button>' +
+    '</section>';
+  }
+  function dirLabel(d) {
+    var a = d === "asc", s = state.sort;
+    if (s === "yield") return a ? "Сначала низкая" : "Сначала высокая";
+    if (s === "price") return a ? "Сначала дешёвые" : "Сначала дорогие";
+    if (s === "rent") return a ? "Сначала низкая" : "Сначала высокая";
+    if (s === "payback") return a ? "Сначала быстрая" : "Сначала долгая";
+    return a ? "Сначала дешёвый м²" : "Сначала дорогой м²";
+  }
+  function dirHint() {
+    var s = state.sort, a = state.dir === "asc";
+    if (s === "yield") return a ? "низкая доходность вверху" : "высокая доходность вверху";
+    if (s === "price") return a ? "дешёвые вверху" : "дорогие вверху";
+    if (s === "rent") return a ? "низкая аренда вверху" : "высокая аренда вверху";
+    if (s === "payback") return a ? "быстрая окупаемость вверху" : "долгая окупаемость вверху";
+    return a ? "дешёвый метр вверху" : "дорогой метр вверху";
+  }
+
+  function sectionContact() {
+    return '<section>' +
+      '<h2>Связь с автором</h2>' +
+      '<div class="contact">' +
+        '<button class="ccard" data-act="ask">' + I.msg +
+          '<div><b>Задать вопрос</b><span>По квартире, подборке или расчёту — сообщение уйдёт в Telegram.</span></div></button>' +
+        '<button class="ccard" data-act="req-toggle">' + I.upd +
+          '<div><b>Запросить обновление базы</b><span>Обновить подборку или собрать новую под ваш запрос.</span></div></button>' +
+        '<div class="reqform" id="reqform">' +
+          '<div class="field"><span class="label">Город и район</span><input class="inp" id="rq-city" placeholder="Москва, Коньково"></div>' +
+          '<div class="field"><span class="label">Бюджет, млн ₽</span><input class="inp" id="rq-budget" inputmode="decimal" placeholder="до 15"></div>' +
+          '<div class="field"><span class="label">Что ищете</span><input class="inp" id="rq-what" placeholder="студии и 1-комн., новостройки"></div>' +
+          '<button class="btn" data-act="req-send">Отправить запрос</button>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  function renderResults() {
+    var box = document.getElementById("results");
+    if (!box) return;
+    box.classList.remove("hidden");
+    var list = state.showAll ? state.results : state.results.slice(0, 5);
+    var sortLabel = SORTS.filter(function (s) { return s.id === state.sort; })[0].label.toLowerCase();
+    var html = '<h2>Результаты</h2>';
+    if (!state.total) {
+      html += '<div class="empty">Под эти условия квартир нет. Попробуйте расширить бюджет, площадь или выбрать другую подборку.</div>';
+      box.innerHTML = html;
+      return;
+    }
+    html += '<p class="meta-line">Найдено ' + state.total + ' ' + plural(state.total, "объект", "объекта", "объектов") +
+      ' · ' + (state.showAll ? "показаны все" : "топ-" + list.length) + ' по параметру «' + sortLabel + '», ' + dirLabel(state.dir).toLowerCase() + '</p>';
+    html += list.map(cardHtml).join("");
+    html += '<div class="res-foot">';
+    if (state.total > 5) {
+      html += '<button class="btn-line" data-act="all">' + (state.showAll ? "Свернуть до топ-5" : "Показать все (" + state.total + ")") + '</button>';
+    }
+    html += '<button class="btn-line" data-act="copy">' + I.copy + 'Скопировать подборку</button></div>';
+    html += '<p class="note">Аренда — медиана похожих объявлений после удаления дублей и выбросов. Доходность и окупаемость считаются без учёта расходов (ремонт, налог, простой, коммунальные платежи).</p>';
+    box.innerHTML = html;
+  }
+
+  function cardHtml(o, i) {
+    var r = o.rentInfo;
+    var place = [o.okrug, o.district, o.metro ? "м. " + o.metro : ""].filter(Boolean).join(" · ");
+    var k = state.sort;
+    function kpi(id, label, val) {
+      return '<div class="kpi' + (k === id ? " key" : "") + '"><small>' + label + '</small><strong>' + val + '</strong></div>';
+    }
+    var head =
+      '<div class="card-top"><div class="num">' + (i + 1) + '</div><div>' +
+        '<div class="card-title">' + esc(roomsLabel(o.rooms)) + ' · ' + num(o.area, 1) + ' м²' + (o.jk ? ' · ЖК «' + esc(o.jk) + '»' : '') + '</div>' +
+        '<div class="card-place">' + esc(o.address) + (place ? ' · ' + esc(place) : '') + '</div>' +
+      '</div></div>';
+    var kpis = '<div class="kpis">' +
+      kpi("price", "Цена", mln(o.price)) +
+      kpi("yield", "Доходность", o.yield != null ? pct(o.yield) : "—") +
+      kpi("payback", "Окупаемость", o.payback != null ? num(o.payback) + " мес" : "—") +
+    '</div>';
+    var warn = (!r.rent) ? '<div class="warn">Нет данных по аренде — расчёт невозможен.</div>' :
+      (r.lowData ? '<div class="warn">Мало данных: аренда оценена по ' + r.used.length + ' ' + plural(r.used.length, "объявлению", "объявлениям", "объявлениям") + '. Оценка приблизительная.</div>' : '');
+
+    var dl = '<dl class="dl">' +
+      '<dt>Аренда (медиана)</dt><dd>' + (r.rent ? rub(r.rent) + '/мес' : '—') + '</dd>' +
+      (r.range ? '<dt>Диапазон аренды</dt><dd>' + num(r.range[0]) + '–' + num(r.range[1]) + ' ₽</dd>' : '') +
+      '<dt>Цена за м²</dt><dd>' + (o.ppm ? rub(o.ppm) : '—') + '</dd>' +
+      '<dt>Окупаемость</dt><dd>' + (o.payback ? num(o.payback) + ' мес ≈ ' + num(o.payback / 12, 1) + ' года' : '—') + '</dd>' +
+      '<dt>Этаж</dt><dd>' + (o.floor ? o.floor + (o.floors_total ? ' из ' + o.floors_total : '') : '—') + '</dd>' +
+      '<dt>Тип</dt><dd>' + esc(o.type || '—') + '</dd>' +
+      (o.deadline ? '<dt>Срок</dt><dd>' + esc(o.deadline) + '</dd>' : '') +
+      (o.build_year ? '<dt>Год постройки</dt><dd>' + esc(o.build_year) + '</dd>' : '') +
+      '<dt>Источник</dt><dd>' + esc(o.source || '—') + '</dd>' +
+    '</dl>';
+
+    var basis = '<p class="basis">Аренда посчитана по ' + r.used.length + ' ' +
+      plural(r.used.length, "объявлению", "объявлениям", "объявлениям") + ' из ' + r.total +
+      (r.excluded.length ? ' · исключено ' + r.excluded.length : '') + '.' +
+      (o.twins.length ? ' Квартира выставлена ' + (o.twins.length + 1) + ' раза — взята минимальная цена.' : '') + '</p>';
+
+    var exclItems = r.excluded.map(function (e) {
+      return '<div class="excl-item"><b>' + rub(e.item.price) + '</b> · ' + num(e.item.area, 1) + ' м²' +
+        (e.item.floor ? ' · ' + e.item.floor + ' эт.' : '') +
+        '<span class="tag">' + e.reason + '</span><br>' + esc(e.item.address) + ' — ' + esc(e.note) +
+        (e.item.url ? '<br><a class="linkbtn" target="_blank" rel="noopener" href="' + esc(e.item.url) + '" data-url="' + esc(e.item.url) + '">Объявление' + I.ext + '</a>' : '') +
+      '</div>';
+    }).join("");
+    o.twins.forEach(function (t) {
+      exclItems += '<div class="excl-item"><b>' + mln(t.price) + '</b> · та же квартира<span class="tag">дубль</span><br>' +
+        esc(t.source || '') + ' — цена выше, в расчёт не взята' +
+        (t.url ? '<br><a class="linkbtn" target="_blank" rel="noopener" href="' + esc(t.url) + '" data-url="' + esc(t.url) + '">Объявление' + I.ext + '</a>' : '') + '</div>';
+    });
+    var hasExcl = r.excluded.length || o.twins.length;
+
+    var actions = '<div class="actions">' +
+      (o.url ? '<a class="linkbtn" target="_blank" rel="noopener" href="' + esc(o.url) + '" data-url="' + esc(o.url) + '">Открыть объявление' + I.ext + '</a>' : '') +
+      '<button class="linkbtn" data-act="ask-obj" data-id="' + esc(o.id) + '">Спросить об этом объекте</button>' +
+    '</div>';
+
+    return '<article class="card" data-card="' + esc(o.id) + '">' + head + kpis + warn +
+      '<button class="more" data-act="more">' + '<span>Подробнее</span>' + I.chev + '</button>' +
+      '<div class="details">' + dl + basis +
+        (hasExcl ? '<button class="linkbtn excl-toggle" data-act="excl" data-id="' + esc(o.id) + '">Показать исключённые (' + (r.excluded.length + o.twins.length) + ')</button>' +
+          '<div class="excl" id="excl-' + esc(o.id) + '">' + exclItems +
+          '<button class="linkbtn excl-close" data-act="excl" data-id="' + esc(o.id) + '">Свернуть список' + I.chev + '</button></div>' : '') +
+        actions +
+      '</div></article>';
+  }
+
+  function plural(n, one, few, many) {
+    var m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+  }
+
+  /* ---------- Выгрузка и связь ---------- */
+  function collTitle() {
+    if (state.coll === "all") return "Все подборки";
+    var c = DATA.collections.filter(function (x) { return x.id === state.coll; })[0];
+    return c ? c.title : "";
+  }
+  function filtersText() {
+    var p = [];
+    if (state.pMin || state.pMax) p.push("бюджет " + (state.pMin ? "от " + state.pMin + " " : "") + (state.pMax ? "до " + state.pMax + " " : "") + "млн");
+    if (state.rooms.length) p.push("комнаты: " + state.rooms.map(function (r) { return r === 0 ? "студия" : (r === 3 ? "3+" : r); }).join(", "));
+    if (state.type !== "all") p.push(state.type);
+    if (state.okrugs.length) p.push("округ: " + state.okrugs.join(", "));
+    if (state.district) p.push(state.district);
+    if (state.aMin || state.aMax) p.push("площадь " + (state.aMin ? "от " + state.aMin + " " : "") + (state.aMax ? "до " + state.aMax + " " : "") + "м²");
+    return p.length ? p.join("; ") : "без фильтров";
+  }
+  function exportText() {
+    var s = SORTS.filter(function (x) { return x.id === state.sort; })[0];
+    var lines = [
+      "Подборка: " + collTitle(),
+      "Фильтры: " + filtersText(),
+      "Сортировка: " + s.label.toLowerCase() + (state.dir === "asc" ? ", сначала меньшие" : ", сначала большие"),
+      "Найдено: " + state.total,
+      ""
+    ];
+    state.results.forEach(function (o, i) {
+      lines.push((i + 1) + ". " + roomsLabel(o.rooms) + ", " + num(o.area, 1) + " м²" + (o.jk ? ", ЖК «" + o.jk + "»" : "") + " — " + o.address + " (" + [o.okrug, o.district].filter(Boolean).join(", ") + ")");
+      lines.push("   Цена: " + mln(o.price) + " · Аренда: " + (o.rent ? rub(o.rent) + "/мес" : "нет данных"));
+      lines.push("   Доходность: " + (o.yield != null ? pct(o.yield) : "—") + " · Окупаемость: " + (o.payback ? num(o.payback) + " мес" : "—") +
+        (o.rentInfo.lowData && o.rent ? " (мало данных)" : ""));
+      if (o.url) lines.push("   " + o.url);
+      lines.push("");
+    });
+    lines.push("Аренда — медиана похожих объявлений без дублей и выбросов. Расчёт без учёта расходов.");
+    return lines.join("\n");
+  }
+  function copyText(text, okMsg) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+      toast(ok ? okMsg : "Не получилось скопировать автоматически. Попробуйте ещё раз.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, fallback);
+    } else fallback();
+  }
+  var DEFAULT_TG = "Katerina_Passer";
+  function author() {
+    var a = (DATA && DATA.meta && DATA.meta.author) || {};
+    if (!a.telegram || a.telegram === "USERNAME") a = Object.assign({}, a, { telegram: DEFAULT_TG });
+    return a;
+  }
+  function sendToAuthor(text, title) {
+    var u = String(author().telegram || "").replace(/^@/, "");
+    var link = "https://t.me/" + u;
+    document.getElementById("sheetTitle").textContent = title || "Сообщение автору";
+    document.getElementById("sheetGo").setAttribute("href", link);
+    document.getElementById("sheetUser").textContent = "@" + u;
+    var ta = document.getElementById("sheetText");
+    ta.value = text;
+    document.getElementById("sheetBg").hidden = false;
+    document.body.style.overflow = "hidden";
+    setTimeout(function () { try { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {} }, 50);
+  }
+  function closeSheet() {
+    document.getElementById("sheetBg").hidden = true;
+    document.body.style.overflow = "";
+  }
+  document.getElementById("sheetGo").addEventListener("click", function (e) {
+    var text = document.getElementById("sheetText").value;
+    copyText(text, "Текст скопирован. Вставьте его в чат и отправьте.");
+    if (tg && tg.openTelegramLink) {
+      e.preventDefault();
+      try { tg.openTelegramLink(this.getAttribute("href")); } catch (err) {}
+    }
+    setTimeout(closeSheet, 300);
+  });
+  document.getElementById("sheetBg").addEventListener("click", function (e) { if (e.target === this) closeSheet(); });
+  function findObj(id) {
+    return state.results.filter(function (o) { return o.id === id; })[0];
+  }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 3200);
+  }
+
+  /* ---------- События ---------- */
+  document.addEventListener("click", function (e) {
+    var ln = e.target.closest("a[data-url]");
+    if (ln && tg && tg.openLink) { e.preventDefault(); openExternal(ln.dataset.url); }
+  });
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("button");
+    if (!el) return;
+
+
+
+    if (el.dataset.coll) {
+      state.coll = el.dataset.coll; state.district = ""; state.showAll = false;
+      haptic(); renderApp();
+      if (state.shown) { runAnalysis(); renderResults(); }
+      return;
+    }
+    if (el.dataset.room != null) {
+      var v = +el.dataset.room, ix = state.rooms.indexOf(v);
+      if (ix > -1) state.rooms.splice(ix, 1); else state.rooms.push(v);
+      el.classList.toggle("on"); haptic(); return;
+    }
+    if (el.dataset.okrug) {
+      var ok = el.dataset.okrug, oi = state.okrugs.indexOf(ok);
+      if (oi > -1) state.okrugs.splice(oi, 1); else state.okrugs.push(ok);
+      if (state.district) state.district = "";
+      haptic(); refreshBuilder(); return;
+    }
+    if (el.dataset.type) {
+      state.type = el.dataset.type; haptic();
+      el.parentNode.querySelectorAll(".chip").forEach(function (c) { c.classList.toggle("on", c === el); });
+      return;
+    }
+    if (el.dataset.sort) {
+      var s = SORTS.filter(function (x) { return x.id === el.dataset.sort; })[0];
+      state.sort = s.id; state.dir = s.dir; haptic(); refreshBuilder();
+      if (state.shown) { runAnalysis(); renderResults(); }
+      return;
+    }
+    if (el.dataset.dir) {
+      state.dir = el.dataset.dir; haptic(); refreshBuilder();
+      if (state.shown) { runAnalysis(); renderResults(); }
+      return;
+    }
+
+    switch (el.dataset.act) {
+      case "dir":
+        state.dir = state.dir === "asc" ? "desc" : "asc"; haptic(); refreshBuilder(); break;
+      case "run":
+        state.shown = true; state.showAll = false; runAnalysis(); haptic();
+        refreshBuilder(); renderResults();
+        var r = document.getElementById("results");
+        if (r) r.scrollIntoView({ behavior: "smooth", block: "start" });
+        break;
+      case "more":
+        el.closest(".card").classList.toggle("open");
+        el.querySelector("span").textContent = el.closest(".card").classList.contains("open") ? "Свернуть" : "Подробнее";
+        haptic(); break;
+      case "excl":
+        var box = document.getElementById("excl-" + el.dataset.id);
+        if (box) {
+          var open = box.classList.toggle("show");
+          var card = box.closest(".card"), tgl = card && card.querySelector(".excl-toggle");
+          if (tgl) tgl.textContent = (open ? "Скрыть исключённые (" : "Показать исключённые (") + box.querySelectorAll(".excl-item").length + ")";
+          if (!open && tgl) tgl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        break;
+      case "all":
+        state.showAll = !state.showAll; renderResults(); break;
+      case "copy":
+        copyText(exportText(), "Подборка скопирована. Вставьте её в любой чат или заметки — ссылки станут активными.");
+        break;
+      case "sheet-close":
+        closeSheet(); break;
+      case "ask":
+        sendToAuthor("Здравствуйте! Вопрос по приложению «Квартиры под сдачу»:\n", "Задать вопрос");
+        break;
+      case "ask-obj":
+        var o = findObj(el.dataset.id);
+        if (o) sendToAuthor("Здравствуйте! Вопрос по объекту:\n" + roomsLabel(o.rooms) + ", " + num(o.area, 1) + " м², " + o.address +
+          "\nЦена: " + mln(o.price) + (o.url ? "\n" + o.url : "") + "\n\nВопрос: ", "Вопрос об объекте");
+        break;
+      case "req-toggle":
+        document.getElementById("reqform").classList.toggle("show"); break;
+      case "req-send":
+        var city = document.getElementById("rq-city").value.trim();
+        var budget = document.getElementById("rq-budget").value.trim();
+        var what = document.getElementById("rq-what").value.trim();
+        if (!city && !budget && !what) { toast("Заполните хотя бы одно поле запроса."); return; }
+        sendToAuthor("Здравствуйте! Прошу обновить или собрать подборку.\nГород и район: " + (city || "—") +
+          "\nБюджет: " + (budget ? budget + " млн ₽" : "—") + "\nЧто ищу: " + (what || "—") +
+          "\nТекущая подборка: " + collTitle(), "Запрос на обновление базы");
+        break;
+      case "upload":
+        document.getElementById("fileInput").click(); break;
+      case "retry":
+        app.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>'; load(); break;
+    }
+  });
+
+  document.addEventListener("input", function (e) {
+    var k = e.target.dataset && e.target.dataset.in;
+    if (k && k !== "district") state[k] = e.target.value.trim();
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target.dataset && e.target.dataset.in === "district") state.district = e.target.value;
+  });
+
+  document.getElementById("fileInput").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        setData(JSON.parse(rd.result));
+        toast("База из файла загружена.");
+      } catch (err) {
+        toast("Файл не подходит: нужна база в формате приложения (.json).");
+      }
+      e.target.value = "";
+    };
+    rd.readAsText(f, "utf-8");
+  });
+
+  function refreshBuilder() {
+    var sec = app.querySelectorAll("section")[1];
+    if (!sec) return;
+    var tmp = document.createElement("div");
+    tmp.innerHTML = sectionBuilder();
+    sec.replaceWith(tmp.firstChild);
+  }
+
+  // Экспорт для проверки расчётов вне Telegram
+  window.__kv = { analyzeRent: analyzeRent, buildObjects: buildObjects, quantile: quantile };
+
+  /* ---------- Заставка ---------- */
+  function runSplash() {
+    var sp = document.getElementById("splash"), page = document.getElementById("page");
+    function reveal() { document.body.classList.remove("splashing"); page.classList.remove("pre"); }
+    if (!sp) { reveal(); return; }
+    // 3 секунды при первом открытии за день, дальше — 1 секунда
+    var dur = 3000;
+    try {
+      var key = "kv_splash_day", today = new Date().toDateString();
+      if (localStorage.getItem(key) === today) dur = 1000; else localStorage.setItem(key, today);
+    } catch (e) {}
+    var done = false, timer = null;
+    function flip() {
+      if (done) return;
+      done = true; clearTimeout(timer);
+      var reduce = false;
+      try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+      sp.classList.add(reduce ? "fade-out" : "flip-out");
+      setTimeout(function () {
+        if (sp.parentNode) sp.parentNode.removeChild(sp);
+        reveal();
+        page.classList.add(reduce ? "fade-in" : "flip-in");
+        setTimeout(function () { page.classList.remove("flip-in", "fade-in"); }, 500);
+      }, reduce ? 250 : 380);
+    }
+    function start() { if (!done && !timer) timer = setTimeout(flip, dur); }
+    sp.addEventListener("click", flip);
+    var img = sp.querySelector("img");
+    if (img.complete && img.naturalWidth) start();
+    else {
+      img.addEventListener("load", start);
+      img.addEventListener("error", flip);
+      // если фото грузится дольше 2 секунд, не держим человека на пустом экране
+      setTimeout(function () { if (!img.naturalWidth) flip(); }, 2000);
+    }
+  }
+
+  runSplash();
+  load();
+})();
+</script>
+</body>
+</html>
