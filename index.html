@@ -128,6 +128,24 @@
     padding: 16px; margin-bottom: 8px;
   }
   .card-top { display: flex; gap: 12px; align-items: flex-start; }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .marks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; min-width: 0; }
+  .ico { width: 28px; height: 28px; border-radius: var(--r-s); background: var(--card); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; }
+  .mtag { height: 28px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: var(--r-s); border: 1px solid var(--line); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .mtag.key { border-color: var(--accent); color: var(--accent); }
+  .card-head + .card-title { margin-top: 12px; }
+  .daily { margin-top: 12px; font-size: 13px; background: var(--card); border-radius: var(--r-s); padding: 8px 12px; }
+  .daily b { font-weight: 600; }
+  .src { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+  .legend-list { list-style: none; display: grid; gap: 10px; margin-top: 12px; }
+  .legend-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .legend-list li > :first-child { justify-self: start; }
+  .auct { margin-top: 8px; font-size: 14px; color: var(--muted); line-height: 1.45; }
+  .params { display: none; margin-top: 12px; background: var(--card); border-radius: var(--r-s); padding: 12px 16px; font-size: 14px; line-height: 1.5; }
+  .params.show { display: block; }
+  .params dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 16px; }
+  .params dt { color: var(--muted); }
+  .params dd { font-weight: 600; }
   .num {
     flex: 0 0 32px; height: 32px; border-radius: 50%; background: var(--card);
     color: var(--accent); font-weight: 600; font-size: 15px;
@@ -465,6 +483,7 @@
     type: "all",
     district: "",
     okrugs: [],
+    repairs: [],
     pMin: "", pMax: "", aMin: "", aMax: "",
     sort: "yield", dir: "desc",
     shown: false, showAll: false,
@@ -487,7 +506,7 @@
       if (j.settings.duplicates) SETTINGS.duplicates = Object.assign({}, SETTINGS.duplicates, j.settings.duplicates);
     }
     state.coll = j.collections[0].id;
-    state.shown = false; state.showAll = false; state.district = ""; state.okrugs = [];
+    state.shown = false; state.showAll = false; state.district = ""; state.okrugs = []; state.repairs = [];
     var upd = j.meta && j.meta.updated ? "База обновлена " + dateRu(j.meta.updated) : "";
     document.getElementById("headSub").textContent =
       "Цена покупки, рыночная аренда и срок окупаемости." + (upd ? " " + upd : "");
@@ -532,6 +551,7 @@
       }
       if (state.type !== "all" && o.type !== state.type) return false;
       if (state.okrugs.length && state.okrugs.indexOf(o.okrug) < 0) return false;
+      if (state.repairs.length && state.repairs.indexOf(repairGroup(o)) < 0) return false;
       if (state.district && o.district !== state.district) return false;
       if (pMin != null && o.price < pMin * 1e6) return false;
       if (pMax != null && o.price > pMax * 1e6) return false;
@@ -592,10 +612,19 @@
     return '<section style="border-top:0;padding-top:8px">' +
       '<h2>Подборки</h2>' +
       '<div class="rail">' + cards + '</div>' +
+      paramsHtml() +
       '<button class="upl" data-act="upload">' + I.file + 'Открыть файл базы</button>' +
     '</section>';
   }
 
+  function paramsHtml() {
+    var m = (DATA && DATA.meta) || {}, p = m.params || {};
+    var rows = [["Источник", m.source || p.source || "ЦИАН"], ["Дата сбора", m.updated ? dateRu(m.updated) : null]];
+    Object.keys(p).forEach(function (k) { if (k !== "source") rows.push([k, p[k]]); });
+    if (!m.params && m.note) rows.push(["Параметры", m.note]);
+    var dl = rows.filter(function (r) { return r[1]; }).map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join("");
+    return '<button class="linkbtn" style="margin-top:12px" data-act="params">Параметры базы</button><div class="params" id="params"><dl>' + dl + '</dl></div>';
+  }
   function sectionBuilder() {
     var rooms = ROOMS.map(function (r) {
       return '<button class="chip' + (state.rooms.indexOf(r.v) > -1 ? " on" : "") + '" data-room="' + r.v + '">' + r.l + '</button>';
@@ -606,6 +635,10 @@
     var oks = okrugs().map(function (k) {
       return '<button class="chip' + (state.okrugs.indexOf(k) > -1 ? " on" : "") + '" data-okrug="' + esc(k) + '">' + esc(k) + '</button>';
     }).join("");
+    var repPresent = {}; currentListings().forEach(function (l) { repPresent[repairGroup(l)] = 1; });
+    var reps = Object.keys(repPresent).length > 1 ? REPAIR_GROUPS.filter(function (g) { return repPresent[g.id]; }).map(function (g) {
+      return '<button class="chip' + (state.repairs.indexOf(g.id) > -1 ? " on" : "") + '" data-repair="' + g.id + '">' + g.l + '</button>';
+    }).join("") : "";
     var ds = districts().map(function (d) {
       return '<option value="' + esc(d) + '"' + (state.district === d ? " selected" : "") + '>' + esc(d) + '</option>';
     }).join("");
@@ -623,6 +656,7 @@
       (oks ? '<div class="field"><span class="label">Округ</span><div class="chips">' + oks + '</div></div>' : '') +
       '<div class="field"><span class="label">Район</span>' +
         '<select class="inp" data-in="district"><option value="">Любой</option>' + ds + '</select></div>' +
+      (reps ? '<div class="field"><span class="label">Ремонт</span><div class="chips">' + reps + '</div></div>' : '') +
       '<div class="field"><span class="label">Площадь, м²</span><div class="row2">' +
         '<input class="inp" inputmode="decimal" placeholder="от" data-in="aMin" value="' + esc(state.aMin) + '">' +
         '<input class="inp" inputmode="decimal" placeholder="до" data-in="aMax" value="' + esc(state.aMax) + '">' +
@@ -668,6 +702,7 @@
           '<div class="field"><span class="label">Что ищете</span><input class="inp" id="rq-what" placeholder="студии и 1-комн., новостройки"></div>' +
           '<button class="btn" data-act="req-send">Отправить запрос</button>' +
         '</div>' +
+        '<p class="auct">Квартиры с аукционов и торгов в базу не входят. Чтобы посмотреть такие объекты, отправьте запрос на отдельную базу. <button class="linkbtn" data-act="ask-auct">Запросить базу торгов</button></p>' +
       '</div>' +
     '</section>';
   }
@@ -686,16 +721,54 @@
     }
     html += '<p class="meta-line">Найдено ' + state.total + ' ' + plural(state.total, "объект", "объекта", "объектов") +
       ' · ' + (state.showAll ? "показаны все" : "топ-" + list.length) + ' по параметру «' + sortLabel + '», ' + dirLabel(state.dir).toLowerCase() + '</p>';
+    if (state.total <= 7 && state.total > 1) html += '<div class="warn" style="margin:0 0 12px">Под фильтры подошло всего ' + state.total + ' ' + plural(state.total, "объект", "объекта", "объектов") + ': топ-5 по любому параметру будет включать почти все. Расширьте фильтры или откройте «Показать все».</div>';
     html += list.map(cardHtml).join("");
     html += '<div class="res-foot">';
     if (state.total > 5) {
       html += '<button class="btn-line" data-act="all">' + (state.showAll ? "Свернуть до топ-5" : "Показать все (" + state.total + ")") + '</button>';
     }
     html += '<button class="btn-line" data-act="copy">' + I.copy + 'Скопировать подборку</button></div>';
+    html += '<details class="note"><summary>Что означают значки</summary><ul class="legend-list">' +
+      '<li><span class="ico" aria-hidden="true">🔨</span><span>Есть ремонт или чистовая отделка. Вид — в «Подробнее».</span></li>' +
+      '<li><span class="ico" aria-hidden="true">🅿️</span><span>Подземный паркинг, по данным объявления.</span></li>' +
+      '<li><span class="mtag key">Апарты</span><span>Апартаменты: нежилое помещение, без постоянной регистрации.</span></li>' +
+      '<li><span class="mtag">Переуступка</span><span>Продаётся договор с застройщиком до сдачи дома.</span></li>' +
+      '<li><span class="mtag">1 этаж</span><span>Первый или последний этаж — может влиять на ставку аренды.</span></li></ul></details>';
     html += '<p class="note">Аренда — медиана похожих объявлений после удаления дублей и выбросов. Доходность и окупаемость считаются без учёта расходов (ремонт, налог, простой, коммунальные платежи).</p>';
     box.innerHTML = html;
   }
 
+  var REPAIR_GROUPS = [
+    { id: "design", l: "Дизайнерский" }, { id: "euro", l: "Евроремонт" }, { id: "cosm", l: "Косметический" },
+    { id: "fine", l: "Чистовая отделка" }, { id: "none", l: "Без ремонта" }, { id: "unk", l: "Не указан" }
+  ];
+  function repairGroup(o) {
+    var t = String(o.repair || o.decoration || "").toLowerCase();
+    if (!t) return "unk";
+    if (t.indexOf("дизайн") > -1) return "design";
+    if (t.indexOf("евро") > -1) return "euro";
+    if (t.indexOf("космет") > -1) return "cosm";
+    if (t.indexOf("предчист") > -1) return "none";
+    if (t.indexOf("чистов") > -1) return "fine";
+    return "none";
+  }
+  function hasRepair(o) { var g = repairGroup(o); return g === "design" || g === "euro" || g === "cosm" || g === "fine"; }
+  function repairText(o) { return o.repair || o.decoration || "нет данных"; }
+  function floorMark(o) {
+    if (!o.floor) return null;
+    if (o.floor === 1) return "1 этаж";
+    if (o.floors_total && o.floor === o.floors_total && o.floors_total > 1) return "Посл. этаж";
+    return null;
+  }
+  function marksHtml(o) {
+    var m = [];
+    if (hasRepair(o)) m.push('<span class="ico" title="Ремонт: ' + esc(repairText(o)) + '" aria-label="Ремонт: ' + esc(repairText(o)) + '">🔨</span>');
+    if (o.parking === "подземный") m.push('<span class="ico" title="Подземный паркинг" aria-label="Подземный паркинг">🅿️</span>');
+    if (o.apart) m.push('<span class="mtag key">Апарты</span>');
+    if (o.assign) m.push('<span class="mtag">Переуступка</span>');
+    var f = floorMark(o); if (f) m.push('<span class="mtag">' + f + '</span>');
+    return m.join("");
+  }
   function cardHtml(o, i) {
     var r = o.rentInfo;
     var place = [o.okrug, o.district, o.metro ? "м. " + o.metro : ""].filter(Boolean).join(" · ");
@@ -704,10 +777,10 @@
       return '<div class="kpi' + (k === id ? " key" : "") + '"><small>' + label + '</small><strong>' + val + '</strong></div>';
     }
     var head =
-      '<div class="card-top"><div class="num">' + (i + 1) + '</div><div>' +
-        '<div class="card-title">' + esc(roomsLabel(o.rooms)) + ' · ' + num(o.area, 1) + ' м²' + (o.jk ? ' · ЖК «' + esc(o.jk) + '»' : '') + '</div>' +
-        '<div class="card-place">' + esc(o.address) + (place ? ' · ' + esc(place) : '') + '</div>' +
-      '</div></div>';
+      '<div class="card-head"><div class="num">' + (i + 1) + '</div><div class="marks">' + marksHtml(o) + '</div></div>' +
+      '<div class="card-title">' + esc(roomsLabel(o.rooms)) + ' · ' + num(o.area, 1) + ' м²' + (o.jk ? ' · ЖК «' + esc(o.jk) + '»' : '') + '</div>' +
+      '<div class="card-place">' + esc(o.address) + (place ? ' · ' + esc(place) : '') + '</div>';
+    var dly = o.daily && o.daily.n ? '<div class="daily">Посуточно в этом доме: <b>от ' + rub(o.daily.from) + '</b> в сутки · медиана ' + rub(o.daily.med) + ' по ' + o.daily.n + ' ' + plural(o.daily.n, "объявлению", "объявлениям", "объявлениям") + '</div>' : '';
     var kpis = '<div class="kpis">' +
       kpi("price", "Цена", mln(o.price)) +
       kpi("yield", "Доходность", o.yield != null ? pct(o.yield) : "—") +
@@ -723,6 +796,10 @@
       '<dt>Окупаемость</dt><dd>' + (o.payback ? num(o.payback) + ' мес ≈ ' + num(o.payback / 12, 1) + ' года' : '—') + '</dd>' +
       '<dt>Этаж</dt><dd>' + (o.floor ? o.floor + (o.floors_total ? ' из ' + o.floors_total : '') : '—') + '</dd>' +
       '<dt>Тип</dt><dd>' + esc(o.type || '—') + '</dd>' +
+      '<dt>' + (o.type === 'новостройка' ? 'Отделка' : 'Ремонт') + '</dt><dd>' + esc(repairText(o)) + '</dd>' +
+      '<dt>Паркинг</dt><dd>' + esc(o.parking || 'нет данных') + '<span class="src">по данным объявления</span></dd>' +
+      (o.apart ? '<dt>Статус</dt><dd>апартаменты</dd>' : '') +
+      (o.assign ? '<dt>Сделка</dt><dd>переуступка от застройщика</dd>' : '') +
       (o.deadline ? '<dt>Срок</dt><dd>' + esc(o.deadline) + '</dd>' : '') +
       (o.build_year ? '<dt>Год постройки</dt><dd>' + esc(o.build_year) + '</dd>' : '') +
       '<dt>Источник</dt><dd>' + esc(o.source || '—') + '</dd>' +
@@ -752,7 +829,7 @@
       '<button class="linkbtn" data-act="ask-obj" data-id="' + esc(o.id) + '">Спросить об этом объекте</button>' +
     '</div>';
 
-    return '<article class="card" data-card="' + esc(o.id) + '">' + head + kpis + warn +
+    return '<article class="card" data-card="' + esc(o.id) + '">' + head + kpis + dly + warn +
       '<button class="more" data-act="more">' + '<span>Подробнее</span>' + I.chev + '</button>' +
       '<div class="details">' + dl + basis +
         (hasExcl ? '<button class="linkbtn excl-toggle" data-act="excl" data-id="' + esc(o.id) + '">Показать исключённые (' + (r.excluded.length + o.twins.length) + ')</button>' +
@@ -886,6 +963,11 @@
       if (ix > -1) state.rooms.splice(ix, 1); else state.rooms.push(v);
       el.classList.toggle("on"); haptic(); return;
     }
+    if (el.dataset.repair) {
+      var rg = el.dataset.repair, ri = state.repairs.indexOf(rg);
+      if (ri > -1) state.repairs.splice(ri, 1); else state.repairs.push(rg);
+      el.classList.toggle("on"); haptic(); return;
+    }
     if (el.dataset.okrug) {
       var ok = el.dataset.okrug, oi = state.okrugs.indexOf(ok);
       if (oi > -1) state.okrugs.splice(oi, 1); else state.okrugs.push(ok);
@@ -938,6 +1020,12 @@
         break;
       case "sheet-close":
         closeSheet(); break;
+      case "ask-auct":
+        sendToAuthor("Здравствуйте! Прошу прислать базу квартир с аукционов и торгов.\nГород и район: \nБюджет: \nЧто ищу: ", "Запрос базы торгов");
+        break;
+      case "params":
+        var pb = document.getElementById("params"); if (pb) { pb.classList.toggle("show"); el.textContent = pb.classList.contains("show") ? "Скрыть параметры базы" : "Параметры базы"; }
+        break;
       case "ask":
         sendToAuthor("Здравствуйте! Вопрос по приложению «Квартиры под сдачу»:\n", "Задать вопрос");
         break;
